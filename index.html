@@ -151,7 +151,7 @@
                     },
                     'about.txt': {
                         type: 'file',
-                        content: 'Hi, I\'m Finn! A developer passionate about web technologies and terminal-based interfaces.'
+                        content: 'Hi, I\'m Dan Finn! A com sci student working on a web terminal-based interface.'
                     }
                 }
             }
@@ -367,7 +367,7 @@
             window.scrollTo(0, document.body.scrollHeight);
         }
 
-        // Change current directory
+        // change current directory
         function changeDirectory(path) {
             const targetPath = resolvePath(path);
             const targetDir = getPathObject(targetPath);
@@ -386,9 +386,9 @@
             updatePrompt();
         }
 
-        // Cat file - display file contents or follow link
+        // cat file - display file contents or follow link
         function catFile(filename) {
-            // Handle paths in the filename
+            // handle paths in the filename
             const lastSlashIndex = filename.lastIndexOf('/');
             let dirPath = currentDirectory;
             let file = filename;
@@ -417,10 +417,10 @@
                 return;
             }
             
-            // Display content
+            // display content
             addToTerminal(fileObj.content, 'output');
             
-            // If there's a link, navigate to it
+            // if there's a link, navigate to it
             if (fileObj.link) {
                 setTimeout(() => {
                     window.open(fileObj.link, '_blank');
@@ -428,7 +428,7 @@
             }
         }
 
-        // Show help information
+        // show help information
         function showHelp() {
             const helpText = `
 Available commands:
@@ -450,9 +450,9 @@ Available commands:
             addToTerminal(helpText, 'output');
         }
 
-        // Show weather information
+        // show weather information
         function showWeather() {
-            // Simulate weather data
+            // simulate weather data
             const weatherInfo = `
 <div class="weather-container">
   <div class="weather-title">Weather Information</div>
@@ -471,9 +471,9 @@ Available commands:
             window.scrollTo(0, document.body.scrollHeight);
         }
 
-        // Vim/Nano editor functionality
+        // vim/nano editor functionality
         function openEditor(filename) {
-            // Handle paths in the filename
+            // handle paths in the filename
             const lastSlashIndex = filename.lastIndexOf('/');
             let dirPath = currentDirectory;
             let file = filename;
@@ -490,7 +490,7 @@ Available commands:
                 return;
             }
             
-            // Check if file exists, otherwise create it
+            // check if file exists, otherwise create it
             if (!dirObj.content[file]) {
                 dirObj.content[file] = {
                     type: 'file',
@@ -502,7 +502,7 @@ Available commands:
                 return;
             }
             
-            // Set up editor
+            // set up editor
             editingFile = {
                 path: dirPath,
                 name: file,
@@ -516,13 +516,13 @@ Available commands:
             editor.contentEditable = 'true';
             editor.focus();
             
-            // Disable terminal input while editing
+            // disable terminal input while editing
             inputField.disabled = true;
             currentPrompt.style.opacity = '0.5';
             editorMode = 'insert';
         }
 
-        // Save file and exit editor
+        // save file and exit editor
         function saveAndExitEditor() {
             if (!editingFile) return;
             
@@ -535,13 +535,13 @@ Available commands:
             closeEditor();
         }
 
-        // Close editor without saving
+        // close editor without saving
         function closeEditorWithoutSaving() {
             addToTerminal(`"${editingFile.name}" NOT saved`, 'output');
             closeEditor();
         }
 
-        // Close editor
+        // close editor
         function closeEditor() {
             editor.style.display = 'none';
             editorStatus.style.display = 'none';
@@ -551,9 +551,9 @@ Available commands:
             inputField.focus();
         }
 
-        // Create a new directory
+        // create a new directory
         function makeDirectory(dirname) {
-            // Handle paths in the dirname
+            // handle paths in the dirname
             const lastSlashIndex = dirname.lastIndexOf('/');
             let dirPath = currentDirectory;
             let newDir = dirname;
@@ -583,7 +583,7 @@ Available commands:
             addToTerminal(`Directory '${newDir}' created`, 'output');
         }
 
-        // Create a new empty file
+        // create a new empty file
         function touchFile(filename) {
             // Handle paths in the filename
             const lastSlashIndex = filename.lastIndexOf('/');
@@ -607,16 +607,16 @@ Available commands:
                 return;
             }
             
-            // Create or update the file
+            // create or update the file
             dirObj.content[file] = {
                 type: 'file',
                 content: dirObj.content[file]?.content || ''
             };
         }
 
-        // Remove a file
+        // remove a file
         function removeFile(filename) {
-            // Handle paths in the filename
+            // handle paths in the filename
             const lastSlashIndex = filename.lastIndexOf('/');
             let dirPath = currentDirectory;
             let file = filename;
@@ -647,7 +647,7 @@ Available commands:
             addToTerminal(`Removed file '${file}'`, 'output');
         }
 
-        // Event listeners
+        // event listeners
         inputField.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -671,11 +671,11 @@ Available commands:
                 }
             } else if (e.key === 'Tab') {
                 e.preventDefault();
-                // Simple tab completion could be implemented here
+                // simple tab completion could be implemented here
             }
         });
 
-        // Handle vim-style commands in the editor
+        // handle vim-style commands in the editor
         document.addEventListener('keydown', (e) => {
             if (!editingFile) return;
             
@@ -688,7 +688,7 @@ Available commands:
                 return;
             }
             
-            // Handle command mode
+            // handle command mode
             if (editorMode === 'normal' && e.key === ':') {
                 const command = prompt('Enter command:');
                 if (command === 'w') {
@@ -707,7 +707,7 @@ Available commands:
                 return;
             }
             
-            // Switch to insert mode with 'i'
+            // switch to insert mode with 'i'
             if (editorMode === 'normal' && e.key === 'i') {
                 editorMode = 'insert';
                 editorStatus.textContent = `"${editingFile.name}" | INSERT MODE | Press ESC and type :wq to save and quit`;
@@ -715,7 +715,7 @@ Available commands:
             }
         });
 
-        // Initialize terminal
+        // initialize terminal
         function init() {
             addToTerminal('Welcome to dfinn.me terminal!', 'output');
             addToTerminal('Type "help" for available commands.', 'output');
@@ -726,7 +726,7 @@ Available commands:
         // Run initialization
         init();
 
-        // Keep focus on input field
+        // keep focus on input field
         document.addEventListener('click', () => {
             if (!editingFile) {
                 inputField.focus();
