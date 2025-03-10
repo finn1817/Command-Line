@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dfinn.me - Terminal</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #f0f0f0;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            margin: 0;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+        #terminal {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .prompt {
+            color: #50fa7b;
+            font-weight: bold;
+        }
+        .command {
+            color: #f8f8f2;
+        }
+        .output {
+            color: #bbb;
+            display: block;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        .error {
+            color: #ff5555;
+        }
+        #input-container {
+            display: flex;
+            align-items: center;
+        }
+        #current-prompt {
+            white-space: nowrap;
+        }
+        #input-field {
+            background-color: transparent;
+            border: none;
+            color: #f8f8f2;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: inherit;
+            outline: none;
+            flex-grow: 1;
+            padding: 0;
+            margin: 0;
+        }
+        #editor {
+            display: none;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            height: 300px;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            overflow: auto;
+            border: 1px solid #444;
+            line-height: 1.4;
+        }
+        #editor-status {
+            display: none;
+            background-color: #333;
+            color: #fff;
+            padding: 5px;
+            position: sticky;
+            bottom: 0;
+        }
+        .file {
+            color: #8be9fd;
+        }
+        .directory {
+            color: #50fa7b;
+        }
+        .weather-container {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #333;
+            background-color: #1e1e1e;
+            max-width: 400px;
+        }
+        .weather-title {
+            color: #ff79c6;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        /* Weather icons */
+        .weather-icon {
+            display: inline-block;
+            margin-right: 5px;
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+    <div id="input-container">
+        <span id="current-prompt" class="prompt">visitor@dfinn.me:~$</span>
+        <input type="text" id="input-field" autocomplete="off" autofocus>
+    </div>
+    <div id="editor"></div>
+    <div id="editor-status"></div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const inputField = document.getElementById('input-field');
+        const currentPrompt = document.getElementById('current-prompt');
+        const editor = document.getElementById('editor');
+        const editorStatus = document.getElementById('editor-status');
+        
+        let commandHistory = [];
+        let historyIndex = -1;
+        let currentDirectory = '~';
+        let editingFile = null;
+        let editorMode = 'normal'; // 'normal' or 'insert'
+        
+        // File system simulation
+        const fileSystem = {
+            '~': {
+                type: 'directory',
+                content: {
+                    'resume.txt': {
+                        type: 'file',
+                        content: 'Redirecting to resume...',
+                        link: 'https://resume.dfinn.me'
+                    },
+                    'github.txt': {
+                        type: 'file',
+                        content: 'Redirecting to GitHub...',
+                        link: 'https://github.com/finndepeuter'
+                    },
+                    'linkedin.txt': {
+                        type: 'file',
+                        content: 'Redirecting to LinkedIn...',
+                        link: 'https://linkedin.com/in/finn-depeuter'
+                    },
+                    'projects': {
+                        type: 'directory',
+                        content: {}
+                    },
+                    'about.txt': {
+                        type: 'file',
+                        content: 'Hi, I\'m Finn! A developer passionate about web technologies and terminal-based interfaces.'
+                    }
+                }
+            }
+        };
+
+        // Helper function to navigate file system paths
+        function getPathObject(path) {
+            if (path === '~' || path === '/home/visitor') return fileSystem['~'];
+            
+            // Handle relative paths
+            if (!path.startsWith('/') && !path.startsWith('~')) {
+                path = currentDirectory === '~' ? `~/${path}` : `${currentDirectory}/${path}`;
+            }
+            
+            // Normalize path with ~ as base
+            if (path.startsWith('~')) {
+                const parts = path.split('/').filter(p => p !== '');
+                let current = fileSystem['~'];
+                
+                // Skip the ~ part
+                for (let i = 1; i < parts.length; i++) {
+                    if (!current.content || !current.content[parts[i]]) return null;
+                    current = current.content[parts[i]];
+                }
+                
+                return current;
+            }
+            
+            return null;
+        }
+
+        // Function to resolve a path string relative to current directory
+        function resolvePath(path) {
+            if (path === '~' || path === '/home/visitor') return '~';
+            if (path === '.') return currentDirectory;
+            if (path === '..') {
+                if (currentDirectory === '~') return '~';
+                const parts = currentDirectory.split('/');
+                parts.pop();
+                return parts.join('/') || '~';
+            }
+            
+            // Handle relative paths
+            if (!path.startsWith('/') && !path.startsWith('~')) {
+                path = currentDirectory === '~' ? `~/${path}` : `${currentDirectory}/${path}`;
+            }
+            
+            // Normalize with .. and .
+            const parts = path.split('/');
+            const result = [];
+            
+            for (const part of parts) {
+                if (part === '' || part === '.') continue;
+                if (part === '..') {
+                    if (result.length > 0 && result[result.length - 1] !== '~') result.pop();
+                } else {
+                    result.push(part);
+                }
+            }
+            
+            return result.join('/') || '~';
+        }
+
+        // Generate full path for display
+        function getFullPath(dir) {
+            return dir.replace('~', '/home/visitor');
+        }
+
+        // Function to update prompt
+        function updatePrompt() {
+            currentPrompt.textContent = `visitor@dfinn.me:${currentDirectory}$ `;
+        }
+
+        // Add a new line to the terminal
+        function addToTerminal(text, className = '') {
+            const element = document.createElement('div');
+            element.className = className;
+            element.textContent = text;
+            terminal.appendChild(element);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // Process command input
+        function processCommand(command) {
+            // Add command to history
+            commandHistory.unshift(command);
+            historyIndex = -1;
+            
+            // Show command in terminal with prompt
+            addToTerminal(`${currentPrompt.textContent} ${command}`, 'command');
+            
+            // Split command and arguments
+            const args = command.trim().split(/\s+/);
+            const cmd = args[0].toLowerCase();
+            
+            // Process based on command
+            switch(cmd) {
+                case 'clear':
+                    terminal.innerHTML = '';
+                    break;
+                
+                case 'ls':
+                    listDirectory(args[1] || currentDirectory);
+                    break;
+                
+                case 'cd':
+                    changeDirectory(args[1] || '~');
+                    break;
+                
+                case 'pwd':
+                    addToTerminal(getFullPath(currentDirectory), 'output');
+                    break;
+                
+                case 'cat':
+                    if (args.length < 2) {
+                        addToTerminal('Usage: cat <filename>', 'error');
+                    } else {
+                        catFile(args[1]);
+                    }
+                    break;
+                
+                case 'echo':
+                    addToTerminal(args.slice(1).join(' '), 'output');
+                    break;
+                
+                case 'help':
+                    showHelp();
+                    break;
+                
+                case 'weather':
+                    showWeather();
+                    break;
+                
+                case 'vim':
+                case 'vi':
+                case 'nano':
+                    if (args.length < 2) {
+                        addToTerminal(`Usage: ${cmd} <filename>`, 'error');
+                    } else {
+                        openEditor(args[1]);
+                    }
+                    break;
+                
+                case 'mkdir':
+                    if (args.length < 2) {
+                        addToTerminal('Usage: mkdir <directory_name>', 'error');
+                    } else {
+                        makeDirectory(args[1]);
+                    }
+                    break;
+                
+                case 'touch':
+                    if (args.length < 2) {
+                        addToTerminal('Usage: touch <filename>', 'error');
+                    } else {
+                        touchFile(args[1]);
+                    }
+                    break;
+                
+                case 'rm':
+                    if (args.length < 2) {
+                        addToTerminal('Usage: rm <filename>', 'error');
+                    } else {
+                        removeFile(args[1]);
+                    }
+                    break;
+                
+                case 'whoami':
+                    addToTerminal('visitor', 'output');
+                    break;
+                
+                case 'date':
+                    addToTerminal(new Date().toString(), 'output');
+                    break;
+                
+                case '':
+                    // Empty command, just add a new line
+                    break;
+                
+                default:
+                    addToTerminal(`Command not found: ${cmd}. Type 'help' for available commands.`, 'error');
+            }
+        }
+
+        // List directory contents
+        function listDirectory(path) {
+            const dirObj = getPathObject(path);
+            
+            if (!dirObj || dirObj.type !== 'directory') {
+                addToTerminal(`ls: cannot access '${path}': No such directory`, 'error');
+                return;
+            }
+            
+            const files = Object.keys(dirObj.content);
+            if (files.length === 0) {
+                addToTerminal('', 'output');
+                return;
+            }
+            
+            const output = files.map(file => {
+                const item = dirObj.content[file];
+                if (item.type === 'directory') {
+                    return `<span class="directory">${file}/</span>`;
+                } else {
+                    return `<span class="file">${file}</span>`;
+                }
+            }).join('  ');
+            
+            const element = document.createElement('div');
+            element.className = 'output';
+            element.innerHTML = output;
+            terminal.appendChild(element);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // Change current directory
+        function changeDirectory(path) {
+            const targetPath = resolvePath(path);
+            const targetDir = getPathObject(targetPath);
+            
+            if (!targetDir) {
+                addToTerminal(`cd: no such directory: ${path}`, 'error');
+                return;
+            }
+            
+            if (targetDir.type !== 'directory') {
+                addToTerminal(`cd: not a directory: ${path}`, 'error');
+                return;
+            }
+            
+            currentDirectory = targetPath;
+            updatePrompt();
+        }
+
+        // Cat file - display file contents or follow link
+        function catFile(filename) {
+            // Handle paths in the filename
+            const lastSlashIndex = filename.lastIndexOf('/');
+            let dirPath = currentDirectory;
+            let file = filename;
+            
+            if (lastSlashIndex !== -1) {
+                dirPath = resolvePath(filename.substring(0, lastSlashIndex));
+                file = filename.substring(lastSlashIndex + 1);
+            }
+            
+            const dirObj = getPathObject(dirPath);
+            
+            if (!dirObj || dirObj.type !== 'directory') {
+                addToTerminal(`cat: cannot access '${filename}': No such file or directory`, 'error');
+                return;
+            }
+            
+            if (!dirObj.content[file]) {
+                addToTerminal(`cat: ${filename}: No such file or directory`, 'error');
+                return;
+            }
+            
+            const fileObj = dirObj.content[file];
+            
+            if (fileObj.type !== 'file') {
+                addToTerminal(`cat: ${filename}: Is a directory`, 'error');
+                return;
+            }
+            
+            // Display content
+            addToTerminal(fileObj.content, 'output');
+            
+            // If there's a link, navigate to it
+            if (fileObj.link) {
+                setTimeout(() => {
+                    window.open(fileObj.link, '_blank');
+                }, 800);
+            }
+        }
+
+        // Show help information
+        function showHelp() {
+            const helpText = `
+Available commands:
+  ls [directory]     - List directory contents
+  cd [directory]     - Change directory
+  pwd                - Print working directory
+  cat <file>         - Display file contents
+  echo <text>        - Display text
+  clear              - Clear the terminal
+  weather            - Show current weather
+  vim/vi/nano <file> - Edit a file
+  mkdir <directory>  - Create a new directory
+  touch <file>       - Create a new file
+  rm <file>          - Remove a file
+  whoami             - Display current user
+  date               - Display current date and time
+  help               - Show this help message
+`;
+            addToTerminal(helpText, 'output');
+        }
+
+        // Show weather information
+        function showWeather() {
+            // Simulate weather data
+            const weatherInfo = `
+<div class="weather-container">
+  <div class="weather-title">Weather Information</div>
+  <div class="weather-data">
+    <span class="weather-icon">☀️</span> Currently: Sunny, 72°F
+    <br>Humidity: 45%
+    <br>Wind: 5 mph
+    <br>Forecast: Clear skies for the rest of the day.
+  </div>
+</div>`;
+            
+            const element = document.createElement('div');
+            element.className = 'output';
+            element.innerHTML = weatherInfo;
+            terminal.appendChild(element);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        // Vim/Nano editor functionality
+        function openEditor(filename) {
+            // Handle paths in the filename
+            const lastSlashIndex = filename.lastIndexOf('/');
+            let dirPath = currentDirectory;
+            let file = filename;
+            
+            if (lastSlashIndex !== -1) {
+                dirPath = resolvePath(filename.substring(0, lastSlashIndex));
+                file = filename.substring(lastSlashIndex + 1);
+            }
+            
+            const dirObj = getPathObject(dirPath);
+            
+            if (!dirObj || dirObj.type !== 'directory') {
+                addToTerminal(`${filename}: No such file or directory`, 'error');
+                return;
+            }
+            
+            // Check if file exists, otherwise create it
+            if (!dirObj.content[file]) {
+                dirObj.content[file] = {
+                    type: 'file',
+                    content: ''
+                };
+                addToTerminal(`"${file}" [New File]`, 'output');
+            } else if (dirObj.content[file].type !== 'file') {
+                addToTerminal(`${filename}: Is a directory`, 'error');
+                return;
+            }
+            
+            // Set up editor
+            editingFile = {
+                path: dirPath,
+                name: file,
+                content: dirObj.content[file].content
+            };
+            
+            editor.style.display = 'block';
+            editorStatus.style.display = 'block';
+            editorStatus.textContent = `"${file}" ${editingFile.content.length} characters | INSERT MODE | Press ESC and type :wq to save and quit`;
+            editor.textContent = editingFile.content;
+            editor.contentEditable = 'true';
+            editor.focus();
+            
+            // Disable terminal input while editing
+            inputField.disabled = true;
+            currentPrompt.style.opacity = '0.5';
+            editorMode = 'insert';
+        }
+
+        // Save file and exit editor
+        function saveAndExitEditor() {
+            if (!editingFile) return;
+            
+            const dirObj = getPathObject(editingFile.path);
+            if (dirObj && dirObj.type === 'directory') {
+                dirObj.content[editingFile.name].content = editor.textContent;
+                addToTerminal(`"${editingFile.name}" ${editor.textContent.length} characters written`, 'output');
+            }
+            
+            closeEditor();
+        }
+
+        // Close editor without saving
+        function closeEditorWithoutSaving() {
+            addToTerminal(`"${editingFile.name}" NOT saved`, 'output');
+            closeEditor();
+        }
+
+        // Close editor
+        function closeEditor() {
+            editor.style.display = 'none';
+            editorStatus.style.display = 'none';
+            editingFile = null;
+            inputField.disabled = false;
+            currentPrompt.style.opacity = '1';
+            inputField.focus();
+        }
+
+        // Create a new directory
+        function makeDirectory(dirname) {
+            // Handle paths in the dirname
+            const lastSlashIndex = dirname.lastIndexOf('/');
+            let dirPath = currentDirectory;
+            let newDir = dirname;
+            
+            if (lastSlashIndex !== -1) {
+                dirPath = resolvePath(dirname.substring(0, lastSlashIndex));
+                newDir = dirname.substring(lastSlashIndex + 1);
+            }
+            
+            const dirObj = getPathObject(dirPath);
+            
+            if (!dirObj || dirObj.type !== 'directory') {
+                addToTerminal(`mkdir: cannot create directory '${dirname}': No such file or directory`, 'error');
+                return;
+            }
+            
+            if (dirObj.content[newDir]) {
+                addToTerminal(`mkdir: cannot create directory '${dirname}': File exists`, 'error');
+                return;
+            }
+            
+            dirObj.content[newDir] = {
+                type: 'directory',
+                content: {}
+            };
+            
+            addToTerminal(`Directory '${newDir}' created`, 'output');
+        }
+
+        // Create a new empty file
+        function touchFile(filename) {
+            // Handle paths in the filename
+            const lastSlashIndex = filename.lastIndexOf('/');
+            let dirPath = currentDirectory;
+            let file = filename;
+            
+            if (lastSlashIndex !== -1) {
+                dirPath = resolvePath(filename.substring(0, lastSlashIndex));
+                file = filename.substring(lastSlashIndex + 1);
+            }
+            
+            const dirObj = getPathObject(dirPath);
+            
+            if (!dirObj || dirObj.type !== 'directory') {
+                addToTerminal(`touch: cannot touch '${filename}': No such file or directory`, 'error');
+                return;
+            }
+            
+            if (dirObj.content[file] && dirObj.content[file].type === 'directory') {
+                addToTerminal(`touch: cannot touch '${filename}': Is a directory`, 'error');
+                return;
+            }
+            
+            // Create or update the file
+            dirObj.content[file] = {
+                type: 'file',
+                content: dirObj.content[file]?.content || ''
+            };
+        }
+
+        // Remove a file
+        function removeFile(filename) {
+            // Handle paths in the filename
+            const lastSlashIndex = filename.lastIndexOf('/');
+            let dirPath = currentDirectory;
+            let file = filename;
+            
+            if (lastSlashIndex !== -1) {
+                dirPath = resolvePath(filename.substring(0, lastSlashIndex));
+                file = filename.substring(lastSlashIndex + 1);
+            }
+            
+            const dirObj = getPathObject(dirPath);
+            
+            if (!dirObj || dirObj.type !== 'directory') {
+                addToTerminal(`rm: cannot remove '${filename}': No such file or directory`, 'error');
+                return;
+            }
+            
+            if (!dirObj.content[file]) {
+                addToTerminal(`rm: cannot remove '${filename}': No such file or directory`, 'error');
+                return;
+            }
+            
+            if (dirObj.content[file].type === 'directory') {
+                addToTerminal(`rm: cannot remove '${filename}': Is a directory (use rm -r for directories)`, 'error');
+                return;
+            }
+            
+            delete dirObj.content[file];
+            addToTerminal(`Removed file '${file}'`, 'output');
+        }
+
+        // Event listeners
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const command = inputField.value;
+                inputField.value = '';
+                processCommand(command);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    inputField.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    inputField.value = commandHistory[historyIndex];
+                } else {
+                    historyIndex = -1;
+                    inputField.value = '';
+                }
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                // Simple tab completion could be implemented here
+            }
+        });
+
+        // Handle vim-style commands in the editor
+        document.addEventListener('keydown', (e) => {
+            if (!editingFile) return;
+            
+            // ESC key to switch modes
+            if (e.key === 'Escape') {
+                if (editorMode === 'insert') {
+                    editorMode = 'normal';
+                    editorStatus.textContent = `"${editingFile.name}" | NORMAL MODE | :w to save, :q to quit, :wq to save and quit, i to insert`;
+                }
+                return;
+            }
+            
+            // Handle command mode
+            if (editorMode === 'normal' && e.key === ':') {
+                const command = prompt('Enter command:');
+                if (command === 'w') {
+                    const dirObj = getPathObject(editingFile.path);
+                    if (dirObj && dirObj.type === 'directory') {
+                        dirObj.content[editingFile.name].content = editor.textContent;
+                        editorStatus.textContent = `"${editingFile.name}" ${editor.textContent.length} characters written`;
+                    }
+                } else if (command === 'q') {
+                    closeEditorWithoutSaving();
+                } else if (command === 'wq') {
+                    saveAndExitEditor();
+                } else if (command === 'q!') {
+                    closeEditorWithoutSaving();
+                }
+                return;
+            }
+            
+            // Switch to insert mode with 'i'
+            if (editorMode === 'normal' && e.key === 'i') {
+                editorMode = 'insert';
+                editorStatus.textContent = `"${editingFile.name}" | INSERT MODE | Press ESC and type :wq to save and quit`;
+                return;
+            }
+        });
+
+        // Initialize terminal
+        function init() {
+            addToTerminal('Welcome to dfinn.me terminal!', 'output');
+            addToTerminal('Type "help" for available commands.', 'output');
+            updatePrompt();
+            inputField.focus();
+        }
+
+        // Run initialization
+        init();
+
+        // Keep focus on input field
+        document.addEventListener('click', () => {
+            if (!editingFile) {
+                inputField.focus();
+            }
+        });
+    </script>
+</body>
+</html>
