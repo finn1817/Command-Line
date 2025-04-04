@@ -5,46 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>dfinn.me - Terminal</title>
     <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #f0f0f0;
+            --prompt-color: #50fa7b;
+            --command-color: #f8f8f2;
+            --output-color: #bbb;
+            --error-color: #ff5555;
+            --file-color: #8be9fd;
+            --dir-color: #50fa7b;
+            --link-color: #bd93f9;
+            --accent-color: #ff79c6;
+        }
+
         body {
-            background-color: #121212;
-            color: #f0f0f0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: 'Courier New', Courier, monospace;
             padding: 20px;
             margin: 0;
             line-height: 1.5;
             overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
         }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        #logo {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: var(--accent-color);
+        }
+
+        #controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background-color: #333;
+            color: var(--text-color);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #444;
+        }
+
         #terminal {
             white-space: pre-wrap;
             word-wrap: break-word;
+            margin-bottom: 10px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 10px;
         }
+
         .prompt {
-            color: #50fa7b;
+            color: var(--prompt-color);
             font-weight: bold;
         }
+
         .command {
-            color: #f8f8f2;
+            color: var(--command-color);
         }
+
         .output {
-            color: #bbb;
+            color: var(--output-color);
             display: block;
             margin-top: 5px;
             margin-bottom: 10px;
         }
+
         .error {
-            color: #ff5555;
+            color: var(--error-color);
         }
+
         #input-container {
             display: flex;
             align-items: center;
         }
+
         #current-prompt {
             white-space: nowrap;
+            color: var(--prompt-color);
         }
+
         #input-field {
             background-color: transparent;
             border: none;
-            color: #f8f8f2;
+            color: var(--command-color);
             font-family: 'Courier New', Courier, monospace;
             font-size: inherit;
             outline: none;
@@ -52,10 +113,11 @@
             padding: 0;
             margin: 0;
         }
+
         #editor {
             display: none;
             background-color: #1e1e1e;
-            color: #f0f0f0;
+            color: var(--text-color);
             height: 300px;
             width: 100%;
             padding: 10px;
@@ -65,6 +127,7 @@
             border: 1px solid #444;
             line-height: 1.4;
         }
+
         #editor-status {
             display: none;
             background-color: #333;
@@ -73,12 +136,21 @@
             position: sticky;
             bottom: 0;
         }
+
         .file {
-            color: #8be9fd;
+            color: var(--file-color);
         }
+
         .directory {
-            color: #50fa7b;
+            color: var(--dir-color);
         }
+
+        .link {
+            color: var(--link-color);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
         .weather-container {
             margin: 10px 0;
             padding: 10px;
@@ -86,24 +158,175 @@
             background-color: #1e1e1e;
             max-width: 400px;
         }
+
         .weather-title {
-            color: #ff79c6;
+            color: var(--accent-color);
             font-weight: bold;
             margin-bottom: 5px;
         }
-        /* Weather icons */
-        .weather-icon {
-            display: inline-block;
-            margin-right: 5px;
+
+        .system-info {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #333;
+            background-color: #1e1e1e;
+            max-width: 600px;
         }
+
+        .system-info-title {
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .system-info-section {
+            margin-top: 5px;
+            padding-left: 10px;
+            border-left: 2px solid #333;
+        }
+
+        #help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        #help-content {
+            background-color: #1e1e1e;
+            margin: 50px auto;
+            padding: 20px;
+            max-width: 800px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #help-close {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .help-section {
+            margin-bottom: 20px;
+        }
+
+        .help-section h3 {
+            color: var(--accent-color);
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+
+        .help-command {
+            margin-bottom: 10px;
+        }
+
+        .help-command-name {
+            color: var(--prompt-color);
+            font-weight: bold;
+        }
+
+        .help-command-desc {
+            margin-left: 20px;
+        }
+
+        #theme-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+
+        #theme-content {
+            background-color: #1e1e1e;
+            margin: 50px auto;
+            padding: 20px;
+            max-width: 600px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .theme-option {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            margin: 5px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .theme-option.active {
+            border-color: white;
+        }
+
+        #download-link {
+            display: none;
+        }
+
+        .typing-animation {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 3s steps(40, end);
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+
+        .blink {
+            animation: blink-animation 1s steps(5, start) infinite;
+        }
+
+        @keyframes blink-animation {
+            to {
+                visibility: hidden;
+            }
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
+            }
+            
+            #header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            #controls {
+                width: 100%;
+                overflow-x: auto;
+                padding-bottom: 5px;
             }
         }
     </style>
 </head>
 <body>
+    <div id="header">
+        <div id="logo">dfinn.me Terminal</div>
+        <div id="controls">
+            <button id="help-btn" class="btn">Help</button>
+            <button id="theme-btn" class="btn">Themes</button>
+            <button id="clear-btn" class="btn">Clear</button>
+        </div>
+    </div>
+
     <div id="terminal"></div>
     <div id="input-container">
         <span id="current-prompt" class="prompt">visitor@dfinn.me:~$</span>
@@ -111,6 +334,153 @@
     </div>
     <div id="editor"></div>
     <div id="editor-status"></div>
+    
+    <a id="download-link" download></a>
+
+    <div id="help-modal">
+        <div id="help-content">
+            <button id="help-close">×</button>
+            <h2>Terminal Help</h2>
+            
+            <div class="help-section">
+                <h3>Basic Commands</h3>
+                <div class="help-command">
+                    <div class="help-command-name">help</div>
+                    <div class="help-command-desc">Display available commands</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">clear</div>
+                    <div class="help-command-desc">Clear the terminal screen</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">ls [directory]</div>
+                    <div class="help-command-desc">List directory contents</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">cd [directory]</div>
+                    <div class="help-command-desc">Change directory</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">pwd</div>
+                    <div class="help-command-desc">Print working directory</div>
+                </div>
+            </div>
+            
+            <div class="help-section">
+                <h3>File Operations</h3>
+                <div class="help-command">
+                    <div class="help-command-name">cat [file]</div>
+                    <div class="help-command-desc">Display file contents</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">vim/vi/nano [file]</div>
+                    <div class="help-command-desc">Edit a file</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">touch [file]</div>
+                    <div class="help-command-desc">Create a new file</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">mkdir [directory]</div>
+                    <div class="help-command-desc">Create a new directory</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">rm [file]</div>
+                    <div class="help-command-desc">Remove a file</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">download [file]</div>
+                    <div class="help-command-desc">Download a file to your computer</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">upload</div>
+                    <div class="help-command-desc">Upload a file from your computer</div>
+                </div>
+            </div>
+            
+            <div class="help-section">
+                <h3>System & Information</h3>
+                <div class="help-command">
+                    <div class="help-command-name">whoami</div>
+                    <div class="help-command-desc">Display current user</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">date</div>
+                    <div class="help-command-desc">Display current date and time</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">weather</div>
+                    <div class="help-command-desc">Show current weather</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">sysinfo</div>
+                    <div class="help-command-desc">Display system information</div>
+                </div>
+            </div>
+            
+            <div class="help-section">
+                <h3>Customization</h3>
+                <div class="help-command">
+                    <div class="help-command-name">theme [name]</div>
+                    <div class="help-command-desc">Change terminal theme (dracula, monokai, solarized, github, nord)</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">animate [on/off]</div>
+                    <div class="help-command-desc">Toggle terminal animations</div>
+                </div>
+            </div>
+            
+            <div class="help-section">
+                <h3>Editor Commands</h3>
+                <p>When in the editor:</p>
+                <div class="help-command">
+                    <div class="help-command-name">ESC</div>
+                    <div class="help-command-desc">Switch to command mode</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">i (in command mode)</div>
+                    <div class="help-command-desc">Switch to insert mode</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">:w (in command mode)</div>
+                    <div class="help-command-desc">Save file</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">:q (in command mode)</div>
+                    <div class="help-command-desc">Quit editor</div>
+                </div>
+                <div class="help-command">
+                    <div class="help-command-name">:wq (in command mode)</div>
+                    <div class="help-command-desc">Save and quit</div>
+                </div>
+            </div>
+            
+            <div class="help-section">
+                <h3>Tips</h3>
+                <ul>
+                    <li>Use Up/Down arrow keys to navigate command history</li>
+                    <li>Files with .txt extension can be downloaded to your computer</li>
+                    <li>The terminal state is saved between sessions (using localStorage)</li>
+                    <li>Try different themes with the 'theme' command</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="theme-modal">
+        <div id="theme-content">
+            <button id="theme-close" class="btn">Close</button>
+            <h2>Select Theme</h2>
+            <div id="theme-options">
+                <div class="theme-option active" data-theme="dracula" style="background-color: #282a36;"></div>
+                <div class="theme-option" data-theme="monokai" style="background-color: #272822;"></div>
+                <div class="theme-option" data-theme="solarized" style="background-color: #002b36;"></div>
+                <div class="theme-option" data-theme="github" style="background-color: #ffffff;"></div>
+                <div class="theme-option" data-theme="nord" style="background-color: #2e3440;"></div>
+            </div>
+            <p>Current theme: <span id="current-theme">dracula</span></p>
+        </div>
+    </div>
 
     <script>
         const terminal = document.getElementById('terminal');
@@ -118,22 +488,95 @@
         const currentPrompt = document.getElementById('current-prompt');
         const editor = document.getElementById('editor');
         const editorStatus = document.getElementById('editor-status');
+        const helpModal = document.getElementById('help-modal');
+        const helpBtn = document.getElementById('help-btn');
+        const helpClose = document.getElementById('help-close');
+        const themeModal = document.getElementById('theme-modal');
+        const themeBtn = document.getElementById('theme-btn');
+        const themeClose = document.getElementById('theme-close');
+        const clearBtn = document.getElementById('clear-btn');
+        const downloadLink = document.getElementById('download-link');
         
         let commandHistory = [];
         let historyIndex = -1;
         let currentDirectory = '~';
         let editingFile = null;
-        let editorMode = 'normal'; // 'normal' or 'insert'
+        let editorMode = 'normal';  // 'normal' or 'insert'
+        let animationsEnabled = true;
         
-        // File system simulation
-        const fileSystem = {
+        // Theme settings
+        const themes = {
+            dracula: {
+                bgColor: '#282a36',
+                textColor: '#f8f8f2',
+                promptColor: '#50fa7b',
+                commandColor: '#f8f8f2',
+                outputColor: '#bbb',
+                errorColor: '#ff5555',
+                fileColor: '#8be9fd',
+                dirColor: '#50fa7b',
+                linkColor: '#bd93f9',
+                accentColor: '#ff79c6'
+            },
+            monokai: {
+                bgColor: '#272822',
+                textColor: '#f8f8f2',
+                promptColor: '#a6e22e',
+                commandColor: '#f8f8f2',
+                outputColor: '#bbb',
+                errorColor: '#f92672',
+                fileColor: '#66d9ef',
+                dirColor: '#a6e22e',
+                linkColor: '#ae81ff',
+                accentColor: '#fd971f'
+            },
+            solarized: {
+                bgColor: '#002b36',
+                textColor: '#839496',
+                promptColor: '#859900',
+                commandColor: '#839496',
+                outputColor: '#657b83',
+                errorColor: '#dc322f',
+                fileColor: '#268bd2',
+                dirColor: '#859900',
+                linkColor: '#6c71c4',
+                accentColor: '#cb4b16'
+            },
+            github: {
+                bgColor: '#ffffff',
+                textColor: '#24292e',
+                promptColor: '#22863a',
+                commandColor: '#24292e',
+                outputColor: '#586069',
+                errorColor: '#d73a49',
+                fileColor: '#032f62',
+                dirColor: '#22863a',
+                linkColor: '#6f42c1',
+                accentColor: '#005cc5'
+            },
+            nord: {
+                bgColor: '#2e3440',
+                textColor: '#d8dee9',
+                promptColor: '#a3be8c',
+                commandColor: '#d8dee9',
+                outputColor: '#9a9ea8',
+                errorColor: '#bf616a',
+                fileColor: '#88c0d0',
+                dirColor: '#a3be8c',
+                linkColor: '#b48ead',
+                accentColor: '#ebcb8b'
+            }
+        };
+        
+        // File system simulation with localStorage persistence
+        let fileSystem = {
             '~': {
                 type: 'directory',
                 content: {
                     'resume.txt': {
                         type: 'file',
                         content: 'Redirecting to resume...',
-                        link: 'https://dfinn.me/Resume-Website/'
+                        link: 'https://dfinn.me/Resume-Website'
                     },
                     'github.txt': {
                         type: 'file',
@@ -143,7 +586,7 @@
                     'linkedin.txt': {
                         type: 'file',
                         content: 'Redirecting to LinkedIn...',
-                        link: 'https://www.linkedin.com/in/danny-finn-52b662348/'
+                        link: 'https://www.linkedin.com/in/danny-finn-52b662348'
                     },
                     'projects': {
                         type: 'directory',
@@ -151,11 +594,70 @@
                     },
                     'about.txt': {
                         type: 'file',
-                        content: 'Hi, I\'m Dan Finn! A com sci student working on a web terminal-based interface.'
+                        content: 'Hi, I'm Dan Finn! A com sci student working on a web terminal-based interface.'
+                    },
+                    'welcome.txt': {
+                        type: 'file',
+                        content: 'Welcome to dfinn.me terminal!\n\nThis is an interactive web terminal where you can explore my portfolio and projects.\n\nType "help" to see available commands.'
                     }
                 }
             }
         };
+
+        // Load file system from localStorage if available
+        function loadFileSystem() {
+            const savedFS = localStorage.getItem('terminalFileSystem');
+            if (savedFS) {
+                try {
+                    fileSystem = JSON.parse(savedFS);
+                } catch (e) {
+                    console.error('Error loading file system:', e);
+                }
+            }
+        }
+
+        // Save file system to localStorage
+        function saveFileSystem() {
+            try {
+                localStorage.setItem('terminalFileSystem', JSON.stringify(fileSystem));
+            } catch (e) {
+                console.error('Error saving file system:', e);
+            }
+        }
+
+        // Load theme from localStorage if available
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('terminalTheme');
+            if (savedTheme && themes[savedTheme]) {
+                applyTheme(savedTheme);
+                document.getElementById('current-theme').textContent = savedTheme;
+                
+                // Update active theme in modal
+                document.querySelectorAll('.theme-option').forEach(option => {
+                    option.classList.remove('active');
+                });
+                document.querySelector(`.theme-option[data-theme="${savedTheme}"]`).classList.add('active');
+            }
+        }
+
+        // Apply theme to the terminal
+        function applyTheme(themeName) {
+            if (!themes[themeName]) return;
+            
+            const theme = themes[themeName];
+            document.documentElement.style.setProperty('--bg-color', theme.bgColor);
+            document.documentElement.style.setProperty('--text-color', theme.textColor);
+            document.documentElement.style.setProperty('--prompt-color', theme.promptColor);
+            document.documentElement.style.setProperty('--command-color', theme.commandColor);
+            document.documentElement.style.setProperty('--output-color', theme.outputColor);
+            document.documentElement.style.setProperty('--error-color', theme.errorColor);
+            document.documentElement.style.setProperty('--file-color', theme.fileColor);
+            document.documentElement.style.setProperty('--dir-color', theme.dirColor);
+            document.documentElement.style.setProperty('--link-color', theme.linkColor);
+            document.documentElement.style.setProperty('--accent-color', theme.accentColor);
+            
+            localStorage.setItem('terminalTheme', themeName);
+        }
 
         // Helper function to navigate file system paths
         function getPathObject(path) {
@@ -226,19 +728,42 @@
         }
 
         // Add a new line to the terminal
-        function addToTerminal(text, className = '') {
+        function addToTerminal(text, className = '', animate = false) {
             const element = document.createElement('div');
             element.className = className;
-            element.textContent = text;
+            
+            if (animate && animationsEnabled) {
+                element.classList.add('typing-animation');
+                element.textContent = text;
+            } else {
+                element.textContent = text;
+            }
+            
             terminal.appendChild(element);
-            window.scrollTo(0, document.body.scrollHeight);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Add HTML content to terminal
+        function addHTMLToTerminal(html, className = '') {
+            const element = document.createElement('div');
+            element.className = className;
+            element.innerHTML = html;
+            terminal.appendChild(element);
+            terminal.scrollTop = terminal.scrollHeight;
         }
 
         // Process command input
         function processCommand(command) {
-            // Add command to history
-            commandHistory.unshift(command);
-            historyIndex = -1;
+            // Add command to history if not empty
+            if (command.trim()) {
+                commandHistory.unshift(command);
+                historyIndex = -1;
+                
+                // Limit history size
+                if (commandHistory.length > 100) {
+                    commandHistory.pop();
+                }
+            }
             
             // Show command in terminal with prompt
             addToTerminal(`${currentPrompt.textContent} ${command}`, 'command');
@@ -327,6 +852,39 @@
                     addToTerminal(new Date().toString(), 'output');
                     break;
                 
+                case 'theme':
+                    if (args.length < 2) {
+                        themeModal.style.display = 'block';
+                    } else {
+                        changeTheme(args[1]);
+                    }
+                    break;
+                
+                case 'animate':
+                    if (args.length < 2 || (args[1] !== 'on' && args[1] !== 'off')) {
+                        addToTerminal('Usage: animate <on|off>', 'error');
+                    } else {
+                        animationsEnabled = args[1] === 'on';
+                        addToTerminal(`Animations ${animationsEnabled ? 'enabled' : 'disabled'}`, 'output');
+                    }
+                    break;
+                
+                case 'sysinfo':
+                    showSystemInfo();
+                    break;
+                
+                case 'download':
+                    if (args.length < 2) {
+                        addToTerminal('Usage: download <filename>', 'error');
+                    } else {
+                        downloadFile(args[1]);
+                    }
+                    break;
+                
+                case 'upload':
+                    uploadFile();
+                    break;
+                
                 case '':
                     // Empty command, just add a new line
                     break;
@@ -334,6 +892,9 @@
                 default:
                     addToTerminal(`Command not found: ${cmd}. Type 'help' for available commands.`, 'error');
             }
+            
+            // Save file system after each command
+            saveFileSystem();
         }
 
         // List directory contents
@@ -364,7 +925,7 @@
             element.className = 'output';
             element.innerHTML = output;
             terminal.appendChild(element);
-            window.scrollTo(0, document.body.scrollHeight);
+            terminal.scrollTop = terminal.scrollHeight;
         }
 
         // change current directory
@@ -418,7 +979,7 @@
             }
             
             // display content
-            addToTerminal(fileObj.content, 'output');
+            addToTerminal(fileObj.content, 'output', true);
             
             // if there's a link, navigate to it
             if (fileObj.link) {
@@ -445,30 +1006,63 @@ Available commands:
   rm <file>          - Remove a file
   whoami             - Display current user
   date               - Display current date and time
+  theme [name]       - Change terminal theme
+  animate <on/off>   - Toggle animations
+  sysinfo            - Display system information
+  download <file>    - Download a file to your computer
+  upload             - Upload a file from your computer
   help               - Show this help message
-`;
+
+For more detailed help, click the Help button at the top.`;
             addToTerminal(helpText, 'output');
         }
 
         // show weather information
         function showWeather() {
-            // simulate weather data
-            const weatherInfo = `
+            // Get actual weather data if possible
+            fetch('https://api.openweathermap.org/data/2.5/weather?q=New+York&appid=9f7d7d95176d8a1cb3f9be6f2760d384&units=imperial')
+                .then(response => response.json())
+                .then(data => {
+                    const weatherInfo = `
+<div class="weather-container">
+  <div class="weather-title">Weather Information for ${data.name}</div>
+  <div class="weather-data">
+    <span class="weather-icon">🌡️</span> Temperature: ${Math.round(data.main.temp)}°F
+    <br><span class="weather-icon">💧</span> Humidity: ${data.main.humidity}%
+    <br><span class="weather-icon">💨</span> Wind: ${Math.round(data.wind.speed)} mph
+    <br><span class="weather-icon">${getWeatherIcon(data.weather[0].id)}</span> ${data.weather[0].description}
+  </div>
+</div>`;
+                    
+                    addHTMLToTerminal(weatherInfo, 'output');
+                })
+                .catch(error => {
+                    // Fallback to simulated weather data
+                    const weatherInfo = `
 <div class="weather-container">
   <div class="weather-title">Weather Information</div>
   <div class="weather-data">
-    <span class="weather-icon">☀️</span> Currently: Sunny, 72°F
+    <span class="weather-icon">☀️</span> Currently Sunny, 72°F
     <br>Humidity: 45%
     <br>Wind: 5 mph
     <br>Forecast: Clear skies for the rest of the day.
   </div>
 </div>`;
-            
-            const element = document.createElement('div');
-            element.className = 'output';
-            element.innerHTML = weatherInfo;
-            terminal.appendChild(element);
-            window.scrollTo(0, document.body.scrollHeight);
+                    
+                    addHTMLToTerminal(weatherInfo, 'output');
+                });
+        }
+
+        // Helper function to get weather icon
+        function getWeatherIcon(code) {
+            if (code >= 200 && code < 300) return '⚡'; // Thunderstorm
+            if (code >= 300 && code < 400) return '🌧️'; // Drizzle
+            if (code >= 500 && code < 600) return '🌧️'; // Rain
+            if (code >= 600 && code < 700) return '❄️'; // Snow
+            if (code >= 700 && code < 800) return '🌫️'; // Atmosphere
+            if (code === 800) return '☀️'; // Clear
+            if (code > 800) return '☁️'; // Clouds
+            return '🌈';
         }
 
         // vim/nano editor functionality
@@ -496,7 +1090,7 @@ Available commands:
                     type: 'file',
                     content: ''
                 };
-                addToTerminal(`"${file}" [New File]`, 'output');
+                addToTerminal(`${file} [New File]`, 'output');
             } else if (dirObj.content[file].type !== 'file') {
                 addToTerminal(`${filename}: Is a directory`, 'error');
                 return;
@@ -511,7 +1105,7 @@ Available commands:
             
             editor.style.display = 'block';
             editorStatus.style.display = 'block';
-            editorStatus.textContent = `"${file}" ${editingFile.content.length} characters | INSERT MODE | Press ESC and type :wq to save and quit`;
+            editorStatus.textContent = `${file} | ${editingFile.content.length} characters | INSERT MODE | Press ESC and type :wq to save and quit`;
             editor.textContent = editingFile.content;
             editor.contentEditable = 'true';
             editor.focus();
@@ -610,8 +1204,10 @@ Available commands:
             // create or update the file
             dirObj.content[file] = {
                 type: 'file',
-                content: dirObj.content[file]?.content || ''
+                content: dirObj.content[file] ? dirObj.content[file].content : ''
             };
+            
+            addToTerminal(`File '${file}' created`, 'output');
         }
 
         // remove a file
@@ -647,6 +1243,242 @@ Available commands:
             addToTerminal(`Removed file '${file}'`, 'output');
         }
 
+        // Change theme
+        function changeTheme(themeName) {
+            if (!themes[themeName]) {
+                addToTerminal(`Theme '${themeName}' not found. Available themes: ${Object.keys(themes).join(', ')}`, 'error');
+                return;
+            }
+            
+            applyTheme(themeName);
+            document.getElementById('current-theme').textContent = themeName;
+            
+            // Update active theme in modal
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            document.querySelector(`.theme-option[data-theme="${themeName}"]`).classList.add('active');
+            
+            addToTerminal(`Theme changed to '${themeName}'`, 'output');
+        }
+
+        // Show system information
+        function showSystemInfo() {
+            const sysInfoHTML = `
+<div class="system-info">
+  <div class="system-info-title">System Information</div>
+  
+  <div class="system-info-section">
+    <strong>Browser:</strong> ${navigator.userAgent}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Platform:</strong> ${navigator.platform}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Screen Resolution:</strong> ${window.screen.width}x${window.screen.height}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Window Size:</strong> ${window.innerWidth}x${window.innerHeight}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Color Depth:</strong> ${window.screen.colorDepth} bits
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Timezone:</strong> ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Language:</strong> ${navigator.language}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Cookies Enabled:</strong> ${navigator.cookieEnabled ? 'Yes' : 'No'}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Do Not Track:</strong> ${navigator.doNotTrack ? 'Enabled' : 'Disabled'}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Connection:</strong> ${navigator.connection ? 
+      `Type: ${navigator.connection.effectiveType}, 
+       Downlink: ${navigator.connection.downlink} Mbps, 
+       RTT: ${navigator.connection.rtt} ms` : 
+      'Information not available'}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Memory:</strong> ${navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Information not available'}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>CPU Cores:</strong> ${navigator.hardwareConcurrency || 'Information not available'}
+  </div>
+  
+  <div class="system-info-section">
+    <strong>Battery:</strong> <span id="battery-status">Checking...</span>
+  </div>
+  
+  <div class="system-info-section">
+    <strong>WebGL Renderer:</strong> <span id="webgl-info">Checking...</span>
+  </div>
+</div>`;
+
+            addHTMLToTerminal(sysInfoHTML, 'output');
+            
+            // Get battery information if available
+            if (navigator.getBattery) {
+                navigator.getBattery().then(battery => {
+                    const batteryStatus = document.getElementById('battery-status');
+                    if (batteryStatus) {
+                        batteryStatus.textContent = `${Math.round(battery.level * 100)}%, ${battery.charging ? 'Charging' : 'Not charging'}`;
+                    }
+                }).catch(err => {
+                    const batteryStatus = document.getElementById('battery-status');
+                    if (batteryStatus) {
+                        batteryStatus.textContent = 'Information not available';
+                    }
+                });
+            } else {
+                const batteryStatus = document.getElementById('battery-status');
+                if (batteryStatus) {
+                    batteryStatus.textContent = 'Information not available';
+                }
+            }
+            
+            // Get WebGL information
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                    const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                    
+                    const webglInfo = document.getElementById('webgl-info');
+                    if (webglInfo) {
+                        webglInfo.textContent = `${vendor} ${renderer}`;
+                    }
+                } else {
+                    const webglInfo = document.getElementById('webgl-info');
+                    if (webglInfo) {
+                        webglInfo.textContent = 'WebGL not supported';
+                    }
+                }
+            } catch (e) {
+                const webglInfo = document.getElementById('webgl-info');
+                if (webglInfo) {
+                    webglInfo.textContent = 'Information not available';
+                }
+            }
+            
+            // Try to get IP address using a service
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    const sysInfo = document.querySelector('.system-info');
+                    if (sysInfo) {
+                        const ipDiv = document.createElement('div');
+                        ipDiv.className = 'system-info-section';
+                        ipDiv.innerHTML = `<strong>IP Address:</strong> ${data.ip}`;
+                        sysInfo.appendChild(ipDiv);
+                    }
+                })
+                .catch(err => {
+                    // IP fetch failed, don't show anything
+                });
+        }
+
+        // Download a file
+        function downloadFile(filename) {
+            // handle paths in the filename
+            const lastSlashIndex = filename.lastIndexOf('/');
+            let dirPath = currentDirectory;
+            let file = filename;
+            
+            if (lastSlashIndex !== -1) {
+                dirPath = resolvePath(filename.substring(0, lastSlashIndex));
+                file = filename.substring(lastSlashIndex + 1);
+            }
+            
+            const dirObj = getPathObject(dirPath);
+            
+            if (!dirObj || dirObj.type !== 'directory') {
+                addToTerminal(`download: cannot access '${filename}': No such file or directory`, 'error');
+                return;
+            }
+            
+            if (!dirObj.content[file]) {
+                addToTerminal(`download: ${filename}: No such file or directory`, 'error');
+                return;
+            }
+            
+            const fileObj = dirObj.content[file];
+            
+            if (fileObj.type !== 'file') {
+                addToTerminal(`download: ${filename}: Is a directory`, 'error');
+                return;
+            }
+            
+            // Create blob and download
+            const blob = new Blob([fileObj.content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            downloadLink.href = url;
+            downloadLink.download = file;
+            downloadLink.click();
+            
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            addToTerminal(`File '${file}' downloaded to your computer`, 'output');
+        }
+
+        // Upload a file
+        function uploadFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt,.md,.js,.html,.css,.json';
+            
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const content = event.target.result;
+                    
+                    // Create the file in the current directory
+                    const dirObj = getPathObject(currentDirectory);
+                    if (dirObj && dirObj.type === 'directory') {
+                        dirObj.content[file.name] = {
+                            type: 'file',
+                            content: content
+                        };
+                        
+                        addToTerminal(`File '${file.name}' uploaded successfully (${content.length} bytes)`, 'output');
+                        saveFileSystem();
+                    } else {
+                        addToTerminal('Error accessing current directory', 'error');
+                    }
+                };
+                
+                reader.onerror = () => {
+                    addToTerminal('Error reading file', 'error');
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
         // event listeners
         inputField.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -671,7 +1503,71 @@ Available commands:
                 }
             } else if (e.key === 'Tab') {
                 e.preventDefault();
-                // simple tab completion could be implemented here
+                // Tab completion
+                const command = inputField.value;
+                const parts = command.split(/\s+/);
+                
+                if (parts.length > 1) {
+                    const lastPart = parts[parts.length - 1];
+                    
+                    // Handle paths in the input
+                    const lastSlashIndex = lastPart.lastIndexOf('/');
+                    let dirPath = currentDirectory;
+                    let prefix = '';
+                    let partial = lastPart;
+                    
+                    if (lastSlashIndex !== -1) {
+                        dirPath = resolvePath(lastPart.substring(0, lastSlashIndex));
+                        prefix = lastPart.substring(0, lastSlashIndex + 1);
+                        partial = lastPart.substring(lastSlashIndex + 1);
+                    }
+                    
+                    const dirObj = getPathObject(dirPath);
+                    
+                    if (dirObj && dirObj.type === 'directory') {
+                        const files = Object.keys(dirObj.content);
+                        const matches = files.filter(file => file.startsWith(partial));
+                        
+                        if (matches.length === 1) {
+                            // Single match, complete it
+                            parts[parts.length - 1] = prefix + matches[0];
+                            inputField.value = parts.join(' ');
+                            
+                            // Add a trailing slash for directories
+                            if (dirObj.content[matches[0]].type === 'directory') {
+                                inputField.value += '/';
+                            }
+                        } else if (matches.length > 1) {
+                            // Multiple matches, find common prefix
+                            let commonPrefix = partial;
+                            let pos = partial.length;
+                            let allMatch = true;
+                            
+                            while (allMatch && pos < matches[0].length) {
+                                const char = matches[0].charAt(pos);
+                                for (let i = 1; i < matches.length; i++) {
+                                    if (pos >= matches[i].length || matches[i].charAt(pos) !== char) {
+                                        allMatch = false;
+                                        break;
+                                    }
+                                }
+                                
+                                if (allMatch) {
+                                    commonPrefix += char;
+                                    pos++;
+                                }
+                            }
+                            
+                            parts[parts.length - 1] = prefix + commonPrefix;
+                            inputField.value = parts.join(' ');
+                            
+                            // Show matches
+                            addToTerminal('', 'output');
+                            addToTerminal(matches.join('  '), 'output');
+                            addToTerminal(`${currentPrompt.textContent} ${inputField.value}`, 'command');
+                        }
+                    }
+                }
             }
         });
 
@@ -683,19 +1579,21 @@ Available commands:
             if (e.key === 'Escape') {
                 if (editorMode === 'insert') {
                     editorMode = 'normal';
-                    editorStatus.textContent = `"${editingFile.name}" | NORMAL MODE | :w to save, :q to quit, :wq to save and quit, i to insert`;
+                    editorStatus.textContent = `${editingFile.name} | NORMAL MODE | :w to save, :q to quit, :wq to save and quit, i to insert`;
                 }
                 return;
             }
             
             // handle command mode
             if (editorMode === 'normal' && e.key === ':') {
+                e.preventDefault();
                 const command = prompt('Enter command:');
                 if (command === 'w') {
                     const dirObj = getPathObject(editingFile.path);
                     if (dirObj && dirObj.type === 'directory') {
                         dirObj.content[editingFile.name].content = editor.textContent;
-                        editorStatus.textContent = `"${editingFile.name}" ${editor.textContent.length} characters written`;
+                        editorStatus.textContent = `${editingFile.name} | ${editor.textContent.length} characters written`;
+                        saveFileSystem();
                     }
                 } else if (command === 'q') {
                     closeEditorWithoutSaving();
@@ -710,15 +1608,62 @@ Available commands:
             // switch to insert mode with 'i'
             if (editorMode === 'normal' && e.key === 'i') {
                 editorMode = 'insert';
-                editorStatus.textContent = `"${editingFile.name}" | INSERT MODE | Press ESC and type :wq to save and quit`;
+                editorStatus.textContent = `${editingFile.name} | INSERT MODE | Press ESC and type :wq to save and quit`;
                 return;
+            }
+        });
+
+        // Modal event listeners
+        helpBtn.addEventListener('click', () => {
+            helpModal.style.display = 'block';
+        });
+        
+        helpClose.addEventListener('click', () => {
+            helpModal.style.display = 'none';
+        });
+        
+        themeBtn.addEventListener('click', () => {
+            themeModal.style.display = 'block';
+        });
+        
+        themeClose.addEventListener('click', () => {
+            themeModal.style.display = 'none';
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            terminal.innerHTML = '';
+        });
+        
+        // Theme selection
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const themeName = option.getAttribute('data-theme');
+                changeTheme(themeName);
+            });
+        });
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.style.display = 'none';
+            }
+            if (e.target === themeModal) {
+                themeModal.style.display = 'none';
             }
         });
 
         // initialize terminal
         function init() {
-            addToTerminal('Welcome to dfinn.me terminal!', 'output');
-            addToTerminal('Type "help" for available commands.', 'output');
+            // Load saved data
+            loadFileSystem();
+            loadTheme();
+            
+            // Welcome message
+            addToTerminal('Welcome to dfinn.me terminal!', 'output', true);
+            setTimeout(() => {
+                addToTerminal('Type "help" for available commands or click the Help button.', 'output', true);
+            }, 1000);
+            
             updatePrompt();
             inputField.focus();
         }
